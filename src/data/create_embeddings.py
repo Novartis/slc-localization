@@ -17,12 +17,7 @@ from src.data.datasets import slc_dataset
 from src.data.utilities import compute_features, process_images
 
 
-# Configure logger
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler()]
-)
+# Get logger (configured in main.py)
 logger = logging.getLogger(__name__)
 
 

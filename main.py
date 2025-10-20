@@ -74,8 +74,9 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
 
     # Load data
+    anno_filename = os.path.basename(anno_path)
     def get_data_with_path():
-        return get_data(data_dir)
+        return get_data(data_dir, anno_filename)
     df, df_labels = load_embeddings_and_labels(embeddings_path, get_data_with_path)
 
     # Run analysis

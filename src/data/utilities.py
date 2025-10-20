@@ -7,12 +7,7 @@ from PIL import Image
 import glob
 import logging
 
-# Configure logger
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler()]
-)
+# Get logger (configured in main.py)
 logger = logging.getLogger(__name__)
 
 
@@ -82,13 +77,11 @@ def process_images(root_dir):
             try:
                 img = Image.open(image_file)
                 img.close()  # Close the image file to free resources
-                img_list.append(image_file)  # Add only the file name if it can be opened
-            except Exception:
-                logger.warning(f"rm {image_file}")
+                img_list.append(image_file)
+            except (IOError, OSError) as e:
+                logger.warning(f"Failed to open image {image_file}: {e}")
                 continue
-            # Add your image processing code here.  For example:
-            # from PIL import Image
-            # img = Image.open(image_file)
-            # # Do something with the image
-            # img.close()
+            except Exception as e:
+                logger.warning(f"Unexpected error with image {image_file}: {e}")
+                continue
     return img_list

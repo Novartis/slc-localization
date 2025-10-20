@@ -1,7 +1,11 @@
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
 from torch.utils.data import Dataset
 import numpy as np
+import logging
+
+# Get logger (configured in main.py)
+logger = logging.getLogger(__name__)
 
 
 class slc_dataset(Dataset):
@@ -30,8 +34,10 @@ class slc_dataset(Dataset):
             image[:, :, 2] = img.copy()
             image = self.transform(image)
 
+        except (IOError, UnidentifiedImageError, OSError) as e:
+            logger.error(f"Error loading image {img_name}: {e}")
         except Exception as e:
-            print(f"Error {e}: image file ignored at {img_name}")
+            logger.error(f"Unexpected error processing image {img_name}: {e}")
 
         return image
 

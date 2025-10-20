@@ -3,9 +3,9 @@ import numpy as np
 from tqdm.auto import tqdm
 import os
 from skorch import NeuralNetClassifier
-from sklearn.preprocessing import LabelEncoder
 from skorch.callbacks import EarlyStopping
 import warnings
+import torch
 from src.models.models import MLP
 from src.data.utilities import set_seed
 from sklearn.metrics import roc_auc_score, classification_report, confusion_matrix
@@ -13,20 +13,16 @@ import logging
 
 warnings.filterwarnings("ignore")
 
-# Configure logger
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler()]
-)
+# Get logger (configured in main.py)
 logger = logging.getLogger(__name__)
 
 
-def get_data(data_dir=None):
+def get_data(data_dir=None, anno_filename="44320_2025_108_moesm6_esm.csv"):
     """
     Load and merge metadata, file list, and annotation data using robust relative paths.
     Args:
         data_dir (str, optional): Base data directory. If None, uses default relative to this script.
+        anno_filename (str, optional): Name of annotation CSV file. Defaults to "44320_2025_108_moesm6_esm.csv".
     Returns:
         pd.DataFrame: Merged metadata DataFrame.
     """
@@ -43,7 +39,7 @@ def get_data(data_dir=None):
         os.path.join(data_dir, "file_list.csv")
     )
     df_anno = pd.read_csv(
-        os.path.join(data_dir, "44320_2025_108_moesm6_esm.csv")
+        os.path.join(data_dir, anno_filename)
     )
     df_anno = df_anno[df_anno["annotation source"] == "RESOLUTE"]
     df_anno = df_anno.pivot(
@@ -134,11 +130,13 @@ def train_and_evaluate_single(
         threshold_mode="rel",
         lower_is_better=True,
     )
+    # Use GPU if available
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     model_target = NeuralNetClassifier(
         model_mlp,
         max_epochs=30,
         iterator_train__shuffle=False,
-        device="cpu",
+        device=device,
         verbose=0,
         callbacks=[early_stopping],
     )

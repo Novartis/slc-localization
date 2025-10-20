@@ -38,13 +38,11 @@ class MLP(nn.Module):
         self.dropout = nn.Dropout(0.5)
         self.linear2 = nn.Linear(n_hid, n_hid)
         self.output = nn.Linear(n_hid, n_out)
-        self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, X):
         X = X.to(torch.float32)
         X = self.nonlin(self.linear1(X))
-        # X = self.linear1(X)
-        # X = self.dropout(X)
-        # X = self.nonlin(self.linear2(X))
-        X = self.softmax(self.output(X))
+        X = self.dropout(X)
+        X = self.nonlin(self.linear2(X))
+        X = self.output(X)
         return X
