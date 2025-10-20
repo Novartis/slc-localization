@@ -60,12 +60,16 @@ def main():
             logger.info(f"- {c}")
         return
 
-    logger.info("Creating embeddings...")
-    embeddings, file_list = create_embeddings(data_dir)
-    embeddings.to_csv(embeddings_path, index=False)
-    file_list.to_csv(filelist_path, index=False)
-    logger.info(f"Embeddings created and saved to {embeddings_path}")
-    logger.info(f"File list saved to {filelist_path}")
+    if os.path.exists(embeddings_path) and os.path.exists(filelist_path):
+        logger.info(f"Embeddings already exist at {embeddings_path}, skipping creation.")
+        logger.info(f"File list already exists at {filelist_path}, skipping creation.")
+    else:
+        logger.info("Creating embeddings...")
+        embeddings, file_list = create_embeddings(data_dir)
+        embeddings.to_csv(embeddings_path, index=False)
+        file_list.to_csv(filelist_path, index=False)
+        logger.info(f"Embeddings created and saved to {embeddings_path}")
+        logger.info(f"File list saved to {filelist_path}")
 
     os.makedirs(output_dir, exist_ok=True)
 

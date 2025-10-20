@@ -149,7 +149,6 @@ def train_and_evaluate_single(
         callbacks=[early_stopping],
     )
     model_target.fit(X_train, y_train)
-    l_enc = LabelEncoder()
     preds = model_target.predict_proba(X_test.values)
     mean = np.mean(preds, axis=0)[1]
     median = np.median(preds, axis=0)[1]
@@ -249,7 +248,7 @@ def generate_compartment_reports(
                 f"Skipping compartment '{compartment}' because only one class ({unique_classes[0]}) is present in true labels."
             )
             continue
-        roc_auc = roc_auc_score(true_labels, pred_labels)
+        roc_auc = roc_auc_score(true_labels, pred_probs)
         class_report = classification_report(true_labels, pred_labels, output_dict=True)
         conf_mat = confusion_matrix(true_labels, pred_labels)
 
