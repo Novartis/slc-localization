@@ -23,8 +23,8 @@ fi
 # Get the total number of lines in the input file
 TOTAL_LINES=$(wc -l < "$INPUT_FILE")
 
-# If END_ROW is greater than the total number of lines, set it to the maximum
-if [ "$END_ROW" -gt "$TOTAL_LINES" ]; then
+# If END_ROW is 0 or greater than the total number of lines, set it to the maximum
+if [ "$END_ROW" -eq 0 ] || [ "$END_ROW" -gt "$TOTAL_LINES" ]; then
   END_ROW="$TOTAL_LINES"
 fi
 

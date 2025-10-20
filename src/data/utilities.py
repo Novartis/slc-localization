@@ -69,7 +69,7 @@ def process_images(root_dir):
     Args:
         root_dir (str): The path to the root directory containing the subfolders with images.
     Returns:
-        list: List of image file names (not full paths)
+        list: List of full image file paths
     """
     img_list = []
     subfolders = [f.path for f in os.scandir(root_dir) if f.is_dir()]

@@ -51,17 +51,14 @@ def get_data(data_dir=None):
         columns="annotated subcellular location",
         values="annotation score",
     ).reset_index()
-    logger.info(f"Annotation dataframe head:\n{df_anno.head()}")
     logger.info(f"Annotation dataframe shape: {df_anno.shape}")
     df_metadata['filename'] = df_metadata["Files"].apply(
         lambda x: os.path.basename(x)
     )
-    logger.info(f"Metadata dataframe head:\n{df_metadata.head()}")
     logger.info(f"Metadata dataframe shape: {df_metadata.shape}")
     df_metadata = df_metadata[
         df_metadata["filename"].isin(df_filelist["image_name"])
     ].reset_index(drop=True)
-    logger.info(f"Filtered metadata dataframe head:\n{df_metadata.head()}")
     logger.info(f"Filtered metadata dataframe shape: {df_metadata.shape}")
     df_metadata = df_metadata.merge(
         df_anno,
@@ -69,7 +66,6 @@ def get_data(data_dir=None):
         right_on=["gene symbol", "RESOLUTE cellline identifier"],
         how="inner",
     )
-    logger.info(f"Merged metadata dataframe:\n{df_metadata}")
     logger.info(f"Merged metadata dataframe shape: {df_metadata.shape}")
     # Replace NaN with 0
     df_metadata = df_metadata.fillna(0)
@@ -81,7 +77,7 @@ def load_embeddings_and_labels(
     embeddings_path: str, labels_func
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Load embeddings and label dataframes, aligning indices as needed.
+    Load embeddings and label dataframes, aligning them by image_name.
 
     Args:
         embeddings_path (str): Path to the embeddings CSV file.
@@ -126,12 +122,10 @@ def train_and_evaluate_single(
     y_to_train = df_labels[[compartment]].drop(y_test.index, axis=0)
     X_train = X_to_train
     y_train = y_to_train.astype("int")
-    l_enc = LabelEncoder()
     y_train = np.ravel(y_train)
-    y_train = l_enc.fit_transform(y_train)
     X_train = np.asarray(X_train).astype(np.float32)
     y_train = y_train.astype(np.int64)
-    y_train = np.where(y_train == 0, 0, 1)  # Convert to binary classification
+    y_train = np.where(y_train > 1, 1, 0)  # Convert to binary classification
     model_mlp = MLP(n_input=X_train.shape[1])
     early_stopping = EarlyStopping(
         monitor="valid_loss",

@@ -36,7 +36,7 @@ The pipeline is modular, robust to interruptions, and easy to resume.
 │   └── training/          # Training and evaluation scripts
 ├── main.py                # Main entry point for the pipeline
 ├── pyproject.toml         # Python dependencies
-├── Readme.md              # This file
+├── README.md              # This file
 ```
 
 ## Prerequisites & Environment Setup
@@ -68,7 +68,7 @@ uv pip install .
    - To resume or download a different range, adjust the start/end row arguments.
    - For large downloads, use `screen` or `tmux` to avoid interruption.
 3. **Download annotated data:**
-   - Downloaded the data directly from the Ressolute webiste: https://dataresolute.blob.core.windows.net/public/annotation/SLC_localization.xlsx
+   - Downloaded the data directly from the Resolute website: https://dataresolute.blob.core.windows.net/public/annotation/SLC_localization.xlsx
 
 ## Running the Pipeline
 1. **Activate your environment:**

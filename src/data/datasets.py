@@ -21,6 +21,7 @@ class slc_dataset(Dataset):
 
     def __getitem__(self, index):
         img_name = self.img_list[index]
+        image = None
         try:
             img = np.asarray(Image.open(img_name))
             image = np.zeros((img.shape[0], img.shape[1], 3), dtype="float")
@@ -29,8 +30,8 @@ class slc_dataset(Dataset):
             image[:, :, 2] = img.copy()
             image = self.transform(image)
 
-        except Exception:
-            print("Error {e}: image file ignored at %s" % img_name)
+        except Exception as e:
+            print(f"Error {e}: image file ignored at {img_name}")
 
         return image
 

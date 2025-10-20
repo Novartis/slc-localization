@@ -26,7 +26,7 @@ class resize(object):
         return img
 
     def __repr__(self):
-        return self.__class__.__name__ + "(p={})".format(self.p)
+        return self.__class__.__name__ + "(size={})".format(self.size)
 
 
 # Max scaling
