@@ -30,6 +30,7 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument('--data_dir', type=str, default=None, help='Base data directory (default: ./data relative to script)')
+    parser.add_argument('--anno_path', type=str, default=None, help='Path to annotation CSV file (default: 44320_2025_108_moesm6_esm.csv in data_dir)')
     parser.add_argument('--embeddings_path', type=str, default=None, help='Path to save embeddings.csv')
     parser.add_argument('--filelist_path', type=str, default=None, help='Path to save file_list.csv')
     parser.add_argument('--output_dir', type=str, default=None, help='Directory to save compartment results')
@@ -42,6 +43,7 @@ def main():
     # Get the absolute path to the directory containing this script
     base_dir = os.path.abspath(os.path.dirname(__file__))
     data_dir = args.data_dir or os.path.join(base_dir, "data")
+    anno_path = args.anno_path or os.path.join(data_dir, "44320_2025_108_moesm6_esm.csv")
     embeddings_path = args.embeddings_path or os.path.join(data_dir, "embeddings.csv")
     filelist_path = args.filelist_path or os.path.join(data_dir, "file_list.csv")
     output_dir = args.output_dir or os.path.join(data_dir, "compartment_results")
@@ -50,7 +52,6 @@ def main():
     if args.list_compartments:
         # Load annotation file to get all possible compartments
         import pandas as pd
-        anno_path = os.path.join(data_dir, "44320_2025_108_moesm6_esm.csv")
         df_anno = pd.read_csv(anno_path)
         df_anno = df_anno[df_anno["annotation source"] == "RESOLUTE"]
         all_compartments = sorted(df_anno["annotated subcellular location"].unique())
