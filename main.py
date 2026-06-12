@@ -40,6 +40,11 @@ def main():
     parser.add_argument('--seeds', nargs='+', type=int, default=[10, 42, 123],
         help='Random seeds for multi-seed evaluation (mean +/- std across seeds). '
              'Example: --seeds 10 42 123')
+    parser.add_argument('--batch-size', type=int, default=32,
+        help='Batch size for embedding extraction (DenseNet forward pass).')
+    parser.add_argument('--num-workers', type=int, default=4,
+        help='Number of DataLoader workers for embedding extraction. '
+             'Use 0 as a safe fallback on macOS/Windows.')
     parser.add_argument('--list_compartments', action='store_true', help='List all possible compartments and exit')
     args = parser.parse_args()
 
@@ -68,7 +73,9 @@ def main():
         logger.info(f"File list already exists at {filelist_path}, skipping creation.")
     else:
         logger.info("Creating embeddings...")
-        embeddings, file_list = create_embeddings(data_dir)
+        embeddings, file_list = create_embeddings(
+            data_dir, batch_size=args.batch_size, num_workers=args.num_workers
+        )
         embeddings.to_csv(embeddings_path, index=False)
         file_list.to_csv(filelist_path, index=False)
         logger.info(f"Embeddings created and saved to {embeddings_path}")

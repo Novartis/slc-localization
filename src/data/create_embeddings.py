@@ -21,12 +21,15 @@ from src.data.utilities import compute_features, process_images
 logger = logging.getLogger(__name__)
 
 
-def create_embeddings(data_dir=None):
+def create_embeddings(data_dir=None, batch_size=32, num_workers=4):
     """
     Create embeddings for the images in the dataset.
     This function processes images, applies transformations, and computes features using a pre-trained model.
     Args:
         data_dir (str, optional): Base data directory. If None, uses current working directory.
+        batch_size (int, optional): Number of images per forward pass through DenseNet. Defaults to 32.
+        num_workers (int, optional): DataLoader worker processes. Defaults to 4.
+            Use 0 as a safe fallback on macOS/Windows.
     """
     if data_dir is None:
         data_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../../data')
@@ -61,7 +64,9 @@ def create_embeddings(data_dir=None):
     img_list = process_images(root_directory)
 
     dataset = slc_dataset(img_list, transform=transforms.Compose(tra))
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, num_workers=0)
+    dataloader = torch.utils.data.DataLoader(
+        dataset, batch_size=batch_size, num_workers=num_workers
+    )
 
     df_files = pd.DataFrame(img_list, columns=["image_path"])
     df_files["image_name"] = df_files["image_path"].apply(
