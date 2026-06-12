@@ -22,7 +22,6 @@ def set_seed(seed):
     torch.backends.cudnn.benchmark = False
     np.random.seed(seed + 50)
     random.seed(seed - 100)
-    os.environ["PYTHONHASHSEED"] = str(seed - 50)
 
 
 def compute_features(dataloader, model, device):
