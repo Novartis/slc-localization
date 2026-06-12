@@ -197,10 +197,6 @@ def train_and_evaluate_single(
         train_split=predefined_split(valid_ds),
     )
     model_target.fit(X_inner_train, y_inner_train)
-    # With criterion=CrossEntropyLoss and skorch's default
-    # predict_nonlinearity="auto", predict_proba applies softmax to the MLP's
-    # logits internally, so it already returns calibrated [0, 1] class
-    # probabilities (rows sum to 1). No manual softmax needed.
     probs = model_target.predict_proba(X_test.values)
     mean = np.mean(probs, axis=0)[1]
     median = np.median(probs, axis=0)[1]
