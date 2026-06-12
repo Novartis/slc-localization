@@ -190,16 +190,25 @@ def train_and_evaluate_single(
         model_mlp,
         max_epochs=30,
         iterator_train__shuffle=True,
+        criterion=torch.nn.CrossEntropyLoss,
         device=device,
         verbose=0,
         callbacks=[early_stopping],
         train_split=predefined_split(valid_ds),
     )
     model_target.fit(X_inner_train, y_inner_train)
-    preds = model_target.predict_proba(X_test.values)
-    mean = np.mean(preds, axis=0)[1]
-    median = np.median(preds, axis=0)[1]
-    std = np.std(preds[:, 1])
+    # NeuralNetClassifier.predict_proba returns the module's raw forward
+    # output (logits), not normalised probabilities. The MLP ends in a plain
+    # Linear layer, so apply a numerically stable softmax to recover true
+    # [0, 1] class probabilities. CrossEntropyLoss (set above) is the correct
+    # training loss for these logits, so the softmax is well calibrated.
+    logits = model_target.predict_proba(X_test.values)
+    logits = logits - logits.max(axis=1, keepdims=True)
+    exp_logits = np.exp(logits)
+    probs = exp_logits / exp_logits.sum(axis=1, keepdims=True)
+    mean = np.mean(probs, axis=0)[1]
+    median = np.median(probs, axis=0)[1]
+    std = np.std(probs[:, 1])
 
     return {
         "mean": mean,
