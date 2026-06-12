@@ -37,6 +37,9 @@ def main():
     parser.add_argument('--compartments', nargs='+', default=["Plasma membrane"],
         help='List of compartments to analyze (use --list_compartments to see all options). '
              'Example: --compartments "Plasma membrane" "Golgi apparatus"')
+    parser.add_argument('--seeds', nargs='+', type=int, default=[10, 42, 123],
+        help='Random seeds for multi-seed evaluation (mean +/- std across seeds). '
+             'Example: --seeds 10 42 123')
     parser.add_argument('--list_compartments', action='store_true', help='List all possible compartments and exit')
     args = parser.parse_args()
 
@@ -86,6 +89,7 @@ def main():
         compartments=compartments,
         gene_column="SLC [HGNC Symbol]",
         output_dir=output_dir,
+        seeds=args.seeds,
     )
 
     # Generate and save reports
