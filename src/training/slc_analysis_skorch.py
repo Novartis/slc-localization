@@ -4,6 +4,8 @@ from tqdm.auto import tqdm
 import os
 from skorch import NeuralNetClassifier
 from skorch.callbacks import EarlyStopping
+from skorch.dataset import Dataset as SkorchDataset
+from skorch.helper import predefined_split
 import warnings
 import torch
 from src.models.models import MLP
@@ -129,13 +131,45 @@ def train_and_evaluate_single(
         df_labels[df_labels["SLC [HGNC Symbol]"] == targetgene].index
     ]
     y_to_train = df_labels[[compartment]].drop(y_test.index, axis=0)
-    X_train = X_to_train
-    y_train = y_to_train.astype("int")
-    y_train = np.ravel(y_train)
-    X_train = np.asarray(X_train).astype(np.float32)
-    y_train = y_train.astype(np.int64)
-    y_train = np.where(y_train > 1, 1, 0)  # Convert to binary classification
-    model_mlp = MLP(n_input=X_train.shape[1])
+
+    # Convert the full LOO-train fold to binary-labelled arrays (row order is
+    # preserved, so the gene masks computed below stay aligned).
+    X_to_train_arr = np.asarray(X_to_train).astype(np.float32)
+    y_to_train_arr = np.ravel(y_to_train.astype("int")).astype(np.int64)
+    y_to_train_arr = np.where(y_to_train_arr > 1, 1, 0)  # binary classification
+
+    # --- Gene-aware nested validation split for early stopping ---
+    # Reserve ~10% of *gene classes* (not random images) from the LOO-train
+    # fold for early-stopping validation, so no gene appears in both the
+    # inner-train and inner-val partitions. The split consumes the per-call
+    # seed, so different seeds yield different validation gene sets.
+    train_genes = df_labels.loc[X_to_train.index, "SLC [HGNC Symbol]"]
+    unique_train_genes = train_genes.unique()
+    rng = np.random.default_rng(seed)
+    rng.shuffle(unique_train_genes)
+    n_val = max(1, int(0.10 * len(unique_train_genes)))
+    val_genes = set(unique_train_genes[:n_val])
+    inner_val_mask = train_genes.isin(val_genes).values
+    inner_train_mask = ~inner_val_mask
+
+    inner_train_genes = set(unique_train_genes[n_val:])
+    logger.debug(
+        "Gene-aware inner split [compartment=%s, held-out=%s, seed=%d]: "
+        "inner_train_genes=%d, inner_val_genes=%d, overlap=%d",
+        compartment,
+        targetgene,
+        seed,
+        len(inner_train_genes),
+        len(val_genes),
+        len(inner_train_genes & val_genes),
+    )
+
+    X_inner_train = X_to_train_arr[inner_train_mask]
+    y_inner_train = y_to_train_arr[inner_train_mask]
+    X_inner_val = X_to_train_arr[inner_val_mask]
+    y_inner_val = y_to_train_arr[inner_val_mask]
+
+    model_mlp = MLP(n_input=X_inner_train.shape[1])
     early_stopping = EarlyStopping(
         monitor="valid_loss",
         patience=10,
@@ -145,15 +179,23 @@ def train_and_evaluate_single(
     )
     # Use GPU if available
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    # Use a predefined, gene-aware validation set for early stopping instead
+    # of skorch's default internal random 20% slice (which is not gene-aware
+    # and would leak gene-specific signal into model selection).
+    valid_ds = SkorchDataset(
+        X_inner_val.astype(np.float32),
+        y_inner_val.astype(np.int64),
+    )
     model_target = NeuralNetClassifier(
         model_mlp,
         max_epochs=30,
-        iterator_train__shuffle=False,
+        iterator_train__shuffle=True,
         device=device,
         verbose=0,
         callbacks=[early_stopping],
+        train_split=predefined_split(valid_ds),
     )
-    model_target.fit(X_train, y_train)
+    model_target.fit(X_inner_train, y_inner_train)
     preds = model_target.predict_proba(X_test.values)
     mean = np.mean(preds, axis=0)[1]
     median = np.median(preds, axis=0)[1]
