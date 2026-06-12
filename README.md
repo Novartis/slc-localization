@@ -46,8 +46,9 @@ The pipeline is modular, robust to interruptions, and easy to resume.
 
 **Install dependencies using uv:**
 ```bash
-# Install uv if not already installed
-pip install uv
+# Install uv if not already installed (standalone installer; see
+# https://docs.astral.sh/uv/getting-started/installation/ for alternatives)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Create and activate a virtual environment
 uv venv .venv
@@ -58,7 +59,7 @@ uv pip install .
 ```
 
 ## Data Download
-1. **Prepare the file list:** Place your TSV file (e.g., `filelist_sample_HATAG.tsv`) in the `data/` directory.
+1. **Prepare the file list:** Place your TSV file (e.g., `filelist_sample_HATag.tsv`) in the `data/` directory.
 2. **Run the download script:**
    ```bash
    cd data
@@ -84,19 +85,44 @@ uv pip install .
      - Save `embeddings.csv` and `file_list.csv`
      - Run compartment analysis and save results in `data/compartment_results/`
 
-3. **Customizing analysis:**
-   - Edit `main.py` to change compartments, output directories, or embedding paths as needed.
+3. **Customizing analysis (CLI flags):**
+
+   The pipeline is configured via command-line flags (run `python main.py --help`
+   for the full list):
+
+   | Flag | Default | Description |
+   | --- | --- | --- |
+   | `--compartments` | `"Plasma membrane"` | One or more compartments to analyze. Use `--list_compartments` to see all options. |
+   | `--seeds` | `10 42 123` | Random seeds for multi-seed evaluation; metrics are reported as mean ± std across seeds. |
+   | `--batch-size` | `32` | Batch size for embedding extraction (DenseNet forward pass). |
+   | `--num-workers` | `4` | DataLoader worker processes for embedding extraction. **Use `0` as a safe fallback on macOS/Windows.** |
+   | `--data_dir` | `./data` | Base data directory. |
+   | `--output_dir` | `<data_dir>/compartment_results` | Where to write per-compartment results. |
+
+   Example:
+   ```bash
+   python main.py --compartments "Plasma membrane" --seeds 10 42 123 \
+       --batch-size 32 --num-workers 4
+   ```
+
+   List all available compartments and exit:
+   ```bash
+   python main.py --list_compartments
+   ```
 
 ## Outputs & Results
 - `embeddings.csv`: Image embeddings for all processed images
 - `file_list.csv`: List of image file paths
 - `data/compartment_results/`: Contains per-compartment reports, classification metrics, and summary tables
+  - `compartment_summary.csv`: Per-compartment metrics aggregated across seeds as mean ± std (`roc_auc_mean`/`roc_auc_std`, plus PR-AUC, F1, precision, and recall).
+  - `<compartment>_results.csv`: Long-format per-gene predictions with one row per `(gene, seed)`.
 
 ## Troubleshooting & Tips
 - **Resuming downloads:** The shell script skips files that already exist and only counts valid images.
 - **Session persistence:** For long downloads, use `screen` or `tmux` to avoid losing progress if your terminal disconnects.
-- **Missing dependencies:** Ensure all packages in `pyproject.toml` are installed. Use `pip install -r requirements.txt` if needed.
-- **Custom data:** Update paths in `main.py` and `src/data/create_embeddings.py` to match your data locations.
+- **Missing dependencies:** Reinstall the project into your environment with `uv pip install .` (all dependencies are declared in `pyproject.toml`).
+- **DataLoader worker crashes:** On macOS/Windows, if embedding extraction hangs or errors with a multiprocessing/worker message, rerun with `--num-workers 0`.
+- **Custom data:** Use `--data_dir` / `--output_dir` (and the other flags above) to point the pipeline at your data locations.
 
 ## Contact
 For questions or support, please open an issue or contact the project maintainer.
